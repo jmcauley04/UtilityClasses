@@ -10,11 +10,11 @@ public class BatchHandler
 
     public async Task BatchAndExecute<T>(IEnumerable<T> items, int batchSize, Func<IEnumerable<T>, Task> func)
     {
-        var itemList = items.ToList();
-        var chunkQty = (int)Math.Ceiling(itemList.Count * 1.0 / batchSize);
+        var totalQty = items.Count();
+        var chunkQty = (int)Math.Ceiling(totalQty * 1.0 / batchSize);
 
         var iteration = 0;
-        foreach (var chunk in Chunk(items.ToList(), batchSize))
+        foreach (var chunk in Chunk(items, batchSize, totalQty))
         {
             await func.Invoke(chunk);
 
@@ -22,15 +22,15 @@ public class BatchHandler
         }
     }
 
-    private static IEnumerable<IEnumerable<T>> Chunk<T>(IList<T> items, int size)
+    private static IEnumerable<IEnumerable<T>> Chunk<T>(IEnumerable<T> items, int batchSize, int totalQty)
     {
         int iteration = 0;
 
-        while (iteration * size < items.Count)
+        while (iteration * batchSize < totalQty)
         {
             yield return items
-                .Skip(size * iteration++)
-                .Take(size);
+                .Skip(batchSize * iteration++)
+                .Take(batchSize);
         }
     }
 
