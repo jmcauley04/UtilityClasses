@@ -8,13 +8,13 @@ public class BatchAPICalls
 {
     public Action<int>? UpdatePercentComplete { get; set; }
 
-    public async Task SendToAPI<T>(IEnumerable<T> items, int chunkSize, Func<IEnumerable<T>, Task> func)
+    public async Task BatchAndExecute<T>(IEnumerable<T> items, int batchSize, Func<IEnumerable<T>, Task> func)
     {
         var itemList = items.ToList();
-        var chunkQty = (int)Math.Ceiling(itemList.Count * 1.0 / chunkSize);
+        var chunkQty = (int)Math.Ceiling(itemList.Count * 1.0 / batchSize);
 
         var iteration = 0;
-        foreach (var chunk in Chunk(items.ToList(), chunkSize))
+        foreach (var chunk in Chunk(items.ToList(), batchSize))
         {
             await func.Invoke(chunk);
 
@@ -52,7 +52,7 @@ public class BatchAPICalls
 
         batchApiCalls.UpdatePercentComplete += updateConsole;
 
-        await batchApiCalls.SendToAPI(Enumerable.Range(0, 1000), 72, myTask);
+        await batchApiCalls.BatchAndExecute(Enumerable.Range(0, 1000), 72, myTask);
 
         batchApiCalls.UpdatePercentComplete -= updateConsole;
 
