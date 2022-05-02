@@ -8,7 +8,11 @@ public class BatchHandler
 {
     public Action<int>? UpdatePercentComplete { get; set; }
 
-    public async Task BatchAndExecute<T>(IEnumerable<T> items, int batchSize, Func<IEnumerable<T>, Task> func)
+    public IEnumerable<Task> BatchAndExecute<T>(
+        IEnumerable<T> items,
+        Func<IEnumerable<T>, CancellationToken, Task> func,
+        int batchSize = 1000,
+        CancellationToken ct = default)
     {
         var totalQty = items.Count();
         var chunkQty = (int)Math.Ceiling(totalQty * 1.0 / batchSize);
@@ -16,13 +20,16 @@ public class BatchHandler
         var iteration = 0;
         foreach (var chunk in Chunk(items, batchSize, totalQty))
         {
-            await func.Invoke(chunk);
+            yield return func.Invoke(chunk, ct);
 
             UpdatePercentComplete?.Invoke(++iteration * 100 / chunkQty);
         }
     }
 
-    private static IEnumerable<IEnumerable<T>> Chunk<T>(IEnumerable<T> items, int batchSize, int totalQty)
+    private static IEnumerable<IEnumerable<T>> Chunk<T>(
+        IEnumerable<T> items,
+        int batchSize,
+        int totalQty)
     {
         int iteration = 0;
 
